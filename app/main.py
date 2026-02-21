@@ -97,28 +97,46 @@ def dashboard():
 
     html = """
     <html>
-        <head>
-            <title>Weather Records</title>
-            <style>
-                body { font-family: Arial; padding: 20px; background-color: #f4f4f4; }
-                table { border-collapse: collapse; width: 100%; background: white; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-                th { background-color: #2c3e50; color: white; }
-                tr:nth-child(even) { background-color: #f2f2f2; }
-            </style>
-        </head>
-        <body>
-            <h2>Weather Data Records</h2>
-            <table>
-                <tr>
-                    <th>ID</th>
-                    <th>City</th>
-                    <th>Temperature (°C)</th>
-                    <th>Humidity (%)</th>
-                    <th>Weather</th>
-                    <th>Timestamp</th>
-                </tr>
-    """
+    <head>
+        <title>Weather Records</title>
+        <style>
+            body { font-family: Arial; padding: 20px; background-color: #f4f4f4; }
+            table { border-collapse: collapse; width: 100%; background: white; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+            th { background-color: #2c3e50; color: white; }
+            tr:nth-child(even) { background-color: #f2f2f2; }
+            button {
+                padding: 10px 20px;
+                background-color: #2c3e50;
+                color: white;
+                border: none;
+                cursor: pointer;
+                margin-bottom: 15px;
+            }
+            button:hover {
+                background-color: #1a252f;
+            }
+        </style>
+        <script>
+            async function refreshData() {
+                await fetch('/run', { method: 'POST' });
+                window.location.reload();
+            }
+        </script>
+    </head>
+    <body>
+        <h2>Weather Data Records</h2>
+        <button onclick="refreshData()">Refresh Data</button>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>City</th>
+                <th>Temperature (°C)</th>
+                <th>Humidity (%)</th>
+                <th>Weather</th>
+                <th>Timestamp</th>
+            </tr>
+"""
 
     for row in rows:
         html += f"""
