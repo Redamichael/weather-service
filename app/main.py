@@ -1,45 +1,84 @@
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from apscheduler.schedulers.background import BackgroundScheduler
-from .database import create_table
+
+from .database import create_table, get_connection
 from .pipeline import safe_run
 
 app = FastAPI()
+
+# Create scheduler instance (do NOT start yet)
 scheduler = BackgroundScheduler()
 
+
+# =========================
+# Startup & Shutdown Events
+# =========================
+
 @app.on_event("startup")
-def start_scheduler():
+def startup_event():
+    # Ensure DB table exists
     create_table()
 
-    if not scheduler.running:
-        scheduler.add_job(safe_run, "interval", minutes=30)
-        scheduler.start()
+    # Add scheduled job (prevent duplicates)
+    scheduler.add_job(
+        safe_run,
+        trigger="interval",
+        minutes=1,
+        id="weather_job",
+        replace_existing=True
+    )
+
+    scheduler.start()
+
+
+@app.on_event("shutdown")
+def shutdown_event():
+    scheduler.shutdown()
+
+
+# =========================
+# API Endpoints
+# =========================
 
 @app.get("/")
 def root():
     return {"status": "Weather Service Running"}
 
+
 @app.get("/health")
 def health():
     return {"status": "ok"}
 
+
 @app.post("/run")
 def manual_run():
     return safe_run()
-from .database import get_connection
+
 
 @app.get("/records")
 def get_records():
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM weather_data;")
+    cur.execute("""
+        SELECT id, city, temperature, humidity, weather, created_at
+        FROM weather_data
+        ORDER BY created_at DESC;
+    """)
+
     rows = cur.fetchall()
 
     cur.close()
     conn.close()
 
     return rows
+
+
+# =========================
+# Simple HTML Dashboard
+# =========================
+
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard():
     conn = get_connection()
@@ -52,10 +91,10 @@ def dashboard():
     """)
 
     rows = cur.fetchall()
+
     cur.close()
     conn.close()
 
-    # Build HTML table
     html = """
     <html>
         <head>
