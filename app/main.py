@@ -25,13 +25,17 @@ def health():
 @app.post("/run")
 def manual_run():
     return safe_run()
-from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import Weather  # adjust if your model name differs
+from .database import get_connection
 
 @app.get("/records")
 def get_records():
-    db: Session = SessionLocal()
-    records = db.query(Weather).all()
-    db.close()
-    return records
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT * FROM weather_data;")
+    rows = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return rows
